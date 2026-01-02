@@ -1,3 +1,5 @@
+    kcptunb_server -l "unix:/tmp/socket_6566" --ser fast
+
 # kcptunB
 
 kcptunB, **B** is for Breaking fixes/features.
