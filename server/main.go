@@ -400,8 +400,23 @@ func main() {
 			config.KeepAliveMS = config.KeepAlive * 1000
 		}
 
-		lis, err := kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
-		checkError(err)
+		var lis *kcp.Listener
+		if strings.HasPrefix(config.Listen, "unix:") {
+			// Unix socket mode: unix:/path/to/socket or unix:mysock_6566
+			sockPath := strings.TrimPrefix(config.Listen, "unix:")
+			// Remove existing socket file if exists
+			os.Remove(sockPath)
+			unixAddr, err := net.ResolveUnixAddr("unixgram", sockPath)
+			checkError(err)
+			conn, err := net.ListenUnixgram("unixgram", unixAddr)
+			checkError(err)
+			lis, err = kcp.ServeConn(block, config.DataShard, config.ParityShard, conn)
+			checkError(err)
+		} else {
+			var err error
+			lis, err = kcp.ListenWithOptions(config.Listen, block, config.DataShard, config.ParityShard)
+			checkError(err)
+		}
 		log.Println("listening on:", lis.Addr())
 		log.Println("target:", config.Target)
 		log.Println("encryption:", config.Crypt)
